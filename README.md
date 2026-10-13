@@ -153,7 +153,8 @@ same screen pixel instead of merely close to it.
 
 ## Requirements
 
-Windows. Capture uses `System.Windows.Forms`/`System.Drawing` and input uses Win32
+Windows. Tested with DSH `0.2.1-alpha.2`; the package also declares the earlier
+`0.1.5` and `0.1.7` lines. Capture uses `System.Windows.Forms`/`System.Drawing` and input uses Win32
 `SendInput`, both through the bundled PowerShell — no native module, no build
 step, no external API. On other platforms the panel loads and reports that
 capture and injection are unavailable.

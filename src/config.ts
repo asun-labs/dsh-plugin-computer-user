@@ -26,34 +26,40 @@ export const Config: z<Settings> = z.object({
   mode: z
     .union([z.const('disabled'), z.const('readonly'), z.const('manual'), z.const('auto')])
     .default('manual')
-    .description('运行模式：禁用=全部拒绝 | 只读=仅截图/读光标/等待 | 手动批准=需 /computer 批准 | 自动=LLM 自由调用'),
+    .description('运行模式：禁用=全部拒绝 | 只读=仅截图/读光标/等待 | 手动批准=需 /computer 批准 | 自动=LLM 自由调用')
+    .volatile(),
   link_mode: z
     .union([z.const('virtual'), z.const('real')])
     .default('virtual')
     .description(
       '动作落点：virtual=鼠标键盘只作用在右侧快照上，你的真实桌面与光标完全不受影响（默认）；' +
       'real=真正注入本机 SendInput，智能体会占用真实光标'
-    ),
+    )
+    .volatile(),
   capture_interval_ms: z
     .number()
     .default(1500)
-    .description('面板快照自动刷新间隔（毫秒），设为 0 关闭自动刷新'),
+    .description('面板快照自动刷新间隔（毫秒），设为 0 关闭自动刷新')
+    .volatile(),
   max_capture_width: z
     .number()
     .default(1920)
-    .description('面板预览的截图最大宽度（等比缩放，0 = 不限）；仅影响预览，不影响坐标换算'),
+    .description('面板预览的截图最大宽度（等比缩放，0 = 不限）；仅影响预览，不影响坐标换算')
+    .volatile(),
   ai_can_change_mode: z
     .boolean()
     .default(false)
-    .description('AI 是否可自行修改运行模式（computer_set_mode 是否可用），默认不可'),
-  screenshot_dir: z.string().default('').description('截图输出目录（空 = 系统临时目录）'),
-  typing_interval_ms: z.number().default(0).description('逐字输入间隔（毫秒），越大越稳但越慢'),
-  scroll_units: z.number().default(1).description('滚动刻度：一次 scroll 滚动多少格'),
+    .description('AI 是否可自行修改运行模式（computer_set_mode 是否可用），默认不可')
+    .volatile(),
+  screenshot_dir: z.string().default('').description('截图输出目录（空 = 系统临时目录）').volatile(),
+  typing_interval_ms: z.number().default(0).description('逐字输入间隔（毫秒），越大越稳但越慢').volatile(),
+  scroll_units: z.number().default(1).description('滚动刻度：一次 scroll 滚动多少格').volatile(),
   output_guard: z
     .boolean()
     .default(true)
-    .description('LLM 输出过滤器：把工具调用写成对话文本时打回并提示，第二次同内容放行'),
-  debug: z.boolean().default(false).description('调试日志'),
+    .description('LLM 输出过滤器：把工具调用写成对话文本时打回并提示，第二次同内容放行')
+    .volatile(),
+  debug: z.boolean().default(false).description('调试日志').volatile(),
 })
 
 /** Resolved settings, with every default applied. */
@@ -97,7 +103,9 @@ export function resolveSettings(view: SettingsView | undefined): Settings {
   if (!view) return { ...SETTINGS_DEFAULTS }
   const merged: Settings = { ...SETTINGS_DEFAULTS }
   for (const key of Object.keys(SETTINGS_DEFAULTS) as Array<keyof Settings>) {
-    const value = view[key]
+    const raw: unknown = view[key]
+    const value: unknown = raw !== null && typeof raw === 'object'
+      && 'get' in raw && typeof raw.get === 'function' ? raw.get() : raw
     if (value === undefined || value === null) continue
     if (typeof value !== typeof SETTINGS_DEFAULTS[key]) continue
     // Both enums are validated by the schema, but a hand-edited file is not.

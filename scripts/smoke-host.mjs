@@ -46,6 +46,7 @@ check('exports apply()', typeof module.apply === 'function')
 check('exports a settings schema', typeof module.Config === 'function' || typeof module.Config === 'object')
 check('names the settings namespace', module.NS === 'computer-user', `got ${String(module.NS)}`)
 check('has a default export', module.default !== undefined)
+check('default export carries Config for DSH 0.2 forms', module.default?.Config === module.Config)
 
 // ── the settings defaults the panel reads ───────────────────────────────────
 // The schema is the user-visible contract: a wrong default here silently changes
@@ -58,10 +59,11 @@ try {
   check('settings schema parses', false, String(cause?.message ?? cause))
 }
 check('settings schema parses', parsed !== undefined)
-check('link_mode defaults to virtual', parsed?.link_mode === 'virtual', `got ${String(parsed?.link_mode)}`)
-check('mode defaults to manual', parsed?.mode === 'manual', `got ${String(parsed?.mode)}`)
-check('capture interval defaults to a sane cadence', parsed?.capture_interval_ms === 1500, `got ${String(parsed?.capture_interval_ms)}`)
-check('output guard defaults on', parsed?.output_guard === true, `got ${String(parsed?.output_guard)}`)
+const plain = value => value && typeof value === 'object' && typeof value.get === 'function' ? value.get() : value
+check('link_mode defaults to virtual', plain(parsed?.link_mode) === 'virtual', `got ${String(plain(parsed?.link_mode))}`)
+check('mode defaults to manual', plain(parsed?.mode) === 'manual', `got ${String(plain(parsed?.mode))}`)
+check('capture interval defaults to a sane cadence', plain(parsed?.capture_interval_ms) === 1500, `got ${String(plain(parsed?.capture_interval_ms))}`)
+check('output guard defaults on', plain(parsed?.output_guard) === true, `got ${String(plain(parsed?.output_guard))}`)
 
 // ── the PowerShell scripts the host shells out to ───────────────────────────
 // These are not bundled into lib/, so a packaging mistake would only surface at

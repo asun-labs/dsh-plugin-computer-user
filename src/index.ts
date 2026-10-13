@@ -215,10 +215,13 @@ export async function apply(ctx: Context, config: Settings): Promise<void> {
 
   /** Persist a partial settings patch, or keep it in memory when no service exists. */
   let persist: ((patch: Record<string, unknown>) => Promise<void>) | null = null
+  let restartCaptureLoop = (): void => {}
   const applyPatch = async (patch: Record<string, unknown>): Promise<void> => {
-    settings = resolveSettings({ ...settings, ...patch } as Partial<Settings>)
-    invalidatePort()
+    const next = resolveSettings({ ...settings, ...patch } as Partial<Settings>)
     if (persist) await persist(patch)
+    settings = next
+    invalidatePort()
+    restartCaptureLoop()
   }
 
   /**
@@ -295,13 +298,44 @@ export async function apply(ctx: Context, config: Settings): Promise<void> {
   try {
     ctx.inject(['settings'], (sctx) => {
       try {
-        const scope = sctx.settings.register(NS, Config, { base: config })
-        settings = resolveSettings(scope.get())
-        persist = (patch) => scope.update(patch)
-        scope.watch((next) => {
-          settings = resolveSettings(next)
-          invalidatePort()
-        })      } catch (cause) {
+        const service = sctx.settings as unknown as {
+          register?: typeof sctx.settings.register
+          describe?: () => Array<{ ns: string; value: unknown }>
+          update?: (ns: string, patch: object) => Promise<void>
+        }
+        if (typeof service.register === 'function') {
+          const scope = sctx.settings.register(NS, Config, { base: config })
+          settings = resolveSettings(scope.get())
+          persist = (patch) => scope.update(patch)
+          scope.watch((next) => {
+            settings = resolveSettings(next)
+            invalidatePort()
+            restartCaptureLoop()
+          })
+        } else if (typeof service.describe === 'function' && typeof service.update === 'function') {
+          // DSH 0.2 projects each Loader entry as a settings form. The entry id,
+          // rather than the old standalone namespace, is the write target. A
+          // plugin's apply() can run before the Loader publishes its descriptor,
+          // so resolve it when a write arrives, after startup has settled.
+          const initial = service.describe().find(item => item.ns === name || item.ns === NS)
+          if (initial) settings = resolveSettings(initial.value as Settings)
+          persist = async (patch) => {
+            const entry = service.describe!().find(item => item.ns === name || item.ns === NS)
+            if (!entry) throw new Error(`settings entry ${name} is not available yet`)
+            await service.update!(entry.ns, patch)
+          }
+          ctx.on('settings/document-updated', (ns) => {
+            if (String(ns) !== name && String(ns) !== NS) return
+            const entry = service.describe!().find(item => item.ns === name || item.ns === NS)
+            if (!entry) return
+            settings = resolveSettings(entry.value as Settings)
+            invalidatePort()
+            restartCaptureLoop()
+          })
+        } else {
+          throw new Error('settings service has no supported write API')
+        }
+      } catch (cause) {
         persist = null
         ctx.logger?.warn?.(`[${name}] settings unavailable: ${String((cause as Error)?.message ?? cause)}`)
       }
@@ -557,6 +591,7 @@ export async function apply(ctx: Context, config: Settings): Promise<void> {
     }, interval)
     timer.unref?.()
   }
+  restartCaptureLoop = startLoop
   startLoop()
   ctx.effect(() => () => stopLoop(), 'dsh-computer-user: capture loop')
 
@@ -565,4 +600,4 @@ export async function apply(ctx: Context, config: Settings): Promise<void> {
   }
 }
 
-export default { name, inject, apply }
+export default { name, inject, Config, apply }
