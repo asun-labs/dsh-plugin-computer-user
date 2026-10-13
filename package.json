@@ -1,6 +1,6 @@
 {
   "name": "@asun-labs/dsh-plugin-computer-user",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Virtual-desktop computer use for DeepSeek Harness: the agent sees a live snapshot in the right sidebar and its mouse acts on a virtual pointer overlay, so your real desktop and cursor stay yours.",
   "type": "module",
   "main": "lib/index.js",

@@ -35,6 +35,7 @@ import { capturePath, createRealPort, createVirtualPort, toFrame, type DesktopPo
 import { VirtualSession, type Frame, type SessionFrame } from './session.ts'
 import { runPs } from './ps.ts'
 import { createOutputGuard } from './output-guard.ts'
+import { CaptureRetention } from './capture-retention.ts'
 import type {} from '@deepseek-ai/dsh-client-connection'
 import type {} from '@deepseek-ai/dsh-settings'
 import type {} from '@deepseek-ai/dsh-commands'
@@ -194,6 +195,7 @@ function eventStream(session: VirtualSession, request: Request, after: number): 
  */
 export async function apply(ctx: Context, config: Settings): Promise<void> {
   const session = new VirtualSession()
+  const captures = new CaptureRetention()
   const approvedSessions = new Set<string>()
   let settings: Settings = resolveSettings(config)
 
@@ -234,6 +236,7 @@ export async function apply(ctx: Context, config: Settings): Promise<void> {
     region?: readonly number[]
     scale?: number
     keepOverlays?: boolean
+    transient?: boolean
     cwd?: string
     signal?: AbortSignal
   }): Promise<Frame> => {
@@ -269,6 +272,7 @@ export async function apply(ctx: Context, config: Settings): Promise<void> {
       : { width: captured.width / captured.scale, height: captured.height / captured.scale }
     const frame = toFrame(captured, viewport, region)
     session.setFrame(frame, options.keepOverlays ? { keepOverlays: true } : {})
+    if (options.path === undefined) await captures.record(outPath, options.transient === true)
     return frame
   }
 
@@ -505,6 +509,7 @@ export async function apply(ctx: Context, config: Settings): Promise<void> {
         const value = await body(request)
         const region = Array.isArray(value.region) && value.region.length === 4 ? value.region.map(Number) : undefined
         const frame = await capture({
+          transient: true,
           keepOverlays: value.keep_overlays === true,
           ...(region ? { region } : {}),
           ...(typeof value.scale === 'number' ? { scale: value.scale } : {}),
@@ -585,7 +590,7 @@ export async function apply(ctx: Context, config: Settings): Promise<void> {
     timer = setInterval(() => {
       if (capturing) return
       capturing = true
-      capture({ keepOverlays: true })
+      capture({ keepOverlays: true, transient: true })
         .catch((cause) => { ctx.logger?.debug?.(`[${name}] background capture failed: ${String((cause as Error)?.message ?? cause)}`) })
         .finally(() => { capturing = false })
     }, interval)
@@ -593,7 +598,7 @@ export async function apply(ctx: Context, config: Settings): Promise<void> {
   }
   restartCaptureLoop = startLoop
   startLoop()
-  ctx.effect(() => () => stopLoop(), 'dsh-computer-user: capture loop')
+  ctx.effect(() => async () => { stopLoop(); await captures.dispose() }, 'dsh-computer-user: capture loop')
 
   if (settings.debug) {
     ctx.logger?.info?.(`[${name}] ready · mode=${settings.mode} link_mode=${settings.link_mode} platform=${process.platform}`)

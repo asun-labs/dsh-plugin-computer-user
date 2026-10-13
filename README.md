@@ -145,7 +145,10 @@ The split that makes the fork work is `ports.ts`: a tool asks a `DesktopPort` to
 click, and whether that means "really click" or "draw a click on the panel" is
 one swap. `link_mode` changes which port is returned; nothing else in the tool
 layer knows the difference. It also means the whole tool set is testable without
-touching a real desktop — the 76 tests do exactly that.
+touching a real desktop — the tests do exactly that. The Host keeps only the
+latest 24 generated panel previews and removes its generated screenshots on an
+orderly shutdown. A screenshot path supplied explicitly by a tool caller is not
+managed by this cleanup.
 
 `geometry.ts` is shared verbatim by both halves, which is why a click you make on
 the panel and a click the agent makes through `computer_click` resolve to the
