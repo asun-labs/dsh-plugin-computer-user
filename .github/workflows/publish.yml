@@ -1,0 +1,69 @@
+name: Publish
+
+# Publishes to npm through Trusted Publishing (OIDC) — no NPM_TOKEN secret.
+# npm CLI mints a short-lived OIDC token from the `id-token: write` permission
+# and the registry verifies it against the package's trusted publisher record
+# configured on npmjs.com for this repository and workflow file.
+#
+# The publish must use the npm CLI: npm's Trusted Publishing covers
+# `npm publish`, `npm stage publish` and `npm dist-tag` only — pnpm's OIDC
+# support targets its own private registry, not registry.npmjs.org.
+#
+# `npm publish` runs `prepublishOnly` (`pnpm run check`), so build, typecheck,
+# tests, and the host-bundle smoke test gate every publish.
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+# `id-token: write` is the critical requirement for Trusted Publishing.
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+          # Release builds must not use a package-manager cache.
+          package-manager-cache: false
+
+      - name: Enable corepack
+        run: corepack enable
+
+      # Guard against republishing: a tag may be pushed after the same version
+      # was already published by hand.
+      - name: Check whether this version is already on npm
+        id: guard
+        run: |
+          name=$(node -p "require('./package.json').name")
+          version=$(node -p "require('./package.json').version")
+          if npm view "$name@$version" version >/dev/null 2>&1; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "$name@$version is already published; nothing to do."
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Trusted Publishing needs npm CLI 11.5.1+ (Node 22.14+); Node 24 ships one.
+      - name: Report tool versions
+        if: steps.guard.outputs.skip == 'false'
+        run: |
+          node --version
+          npm --version
+
+      - name: Install dependencies
+        if: steps.guard.outputs.skip == 'false'
+        run: pnpm install --frozen-lockfile
+
+      # No NODE_AUTH_TOKEN: the CLI prefers OIDC credentials when
+      # `id-token: write` is granted. Provenance is attached automatically.
+      - name: Publish to npm
+        if: steps.guard.outputs.skip == 'false'
+        run: npm publish

@@ -1,0 +1,108 @@
+NOTICE
+======
+
+dsh-plugin-computer-user
+Copyright (c) 2026 asun-labs
+MIT License
+
+This project is a fork of computer-user, Copyright (c) 2026 jing-hy,
+licensed under the MIT License (https://github.com/jing-hy/computer-user).
+
+The upstream project established the design this fork builds on. The following
+parts originate there and are used under the terms of its MIT License:
+
+  · src/capture.ps1        DPI-aware multi-monitor screenshot via
+                           System.Windows.Forms / System.Drawing.
+                           Copied unmodified.
+
+  · src/input.ps1          Mouse and keyboard automation via Win32 SendInput,
+                           including the embedded C# interop type, the virtual-key
+                           table, Unicode character injection, and the drag
+                           interpolation. Copied unmodified.
+
+  · src/ps.ts              The PowerShell runner protocol: a base64 JSON payload
+                           argument, one JSON object on stdout carrying a boolean
+                           `ok`, and the backward scan for that object.
+                           Ported from upstream src/ps.js.
+
+  · src/output-guard.ts    The LLM output guard: the fake-tool-call patterns, the
+                           fingerprint-counted "reject once, then pass" rule, and
+                           the buffer window. Ported from upstream
+                           src/output-guard.js.
+
+  · src/tools.ts           The computer_* tool set and its descriptions, the
+                           four-mode gate (disabled / readonly / manual / auto),
+                           the /computer approval semantics, the coordinate
+                           system (virtual-screen pixels with virtual_offset),
+                           and the text rendering of tool results. Extended in
+                           this fork; see below.
+
+  · src/config.ts          The settings namespace, most keys, and their
+                           descriptions. Extended in this fork.
+
+  · src/index.ts           The /computer command, the settings registration, the
+                           output-guard wiring, and the route-handling helpers
+                           (json / error / body). Extended in this fork.
+
+  · client (settings card) The idea of a 电脑操作 settings section with a mode
+                           dropdown. Rewritten in this fork against the plugin's
+                           own settings route.
+
+  · skills/computer-use.md The look-act-verify workflow, the window-locating
+                           guidance, and the DPI-awareness warning. Adapted in
+                           this fork for the virtual-desktop mode.
+
+Added by this fork (dsh-plugin-computer-user), not present upstream:
+
+  · src/session.ts         VirtualSession: the shared board the panel renders —
+                           frames, overlays, the virtual cursor, and the user's
+                           instruction queue.
+
+  · src/ports.ts           The DesktopPort seam and its two implementations
+                           (real SendInput vs virtual recording), which is what
+                           makes `link_mode` a single swap rather than a branch
+                           in every tool.
+
+  · src/geometry.ts        The screen ↔ frame ↔ panel coordinate transforms,
+                           shared by the host and the browser half.
+
+  · src/client.tsx         The right-sidebar snapshot panel: live frame, virtual
+                           pointer and trail, click ripples, typed-text and key
+                           labels, user hint pins, zoom / pan / follow, the
+                           link-mode badge and switch, and the settings card.
+
+  · computer_get_vision    Reports the coordinate map and the user's pending
+                           instructions to the model.
+
+  · computer_set_link_mode Switches the action target, gated like
+                           computer_set_mode.
+
+  · link_mode             The virtual / real setting itself, defaulting to
+                           virtual.
+
+  · The capture loop, the /api/computer-user routes (status, frame, vision,
+    events, capture, hint, hint-clear, settings), and the SSE stream with replay.
+
+Full upstream license text:
+
+  MIT License
+
+  Copyright (c) 2026 jing-hy
+
+  Permission is hereby granted, free of charge, to any person obtaining a copy
+  of this software and associated documentation files (the "Software"), to deal
+  in the Software without restriction, including without limitation the rights
+  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+  copies of the Software, and to permit persons to whom the Software is
+  furnished to do so, subject to the following conditions:
+
+  The above copyright notice and this permission notice shall be included in all
+  copies or substantial portions of the Software.
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+  SOFTWARE.

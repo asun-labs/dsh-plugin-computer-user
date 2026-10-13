@@ -1,0 +1,106 @@
+{
+  "name": "@asun-labs/dsh-plugin-computer-user",
+  "version": "0.1.0",
+  "description": "Virtual-desktop computer use for DeepSeek Harness: the agent sees a live snapshot in the right sidebar and its mouse acts on a virtual pointer overlay, so your real desktop and cursor stay yours.",
+  "type": "module",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/index.d.ts",
+      "default": "./lib/index.js"
+    },
+    "./client": "./lib/client.js",
+    "./package.json": "./package.json",
+    "./cordis.patch.yml": "./cordis.patch.yml"
+  },
+  "files": [
+    "lib",
+    "src/capture.ps1",
+    "src/input.ps1",
+    "skills",
+    "cordis.patch.yml",
+    "README.md",
+    "LICENSE",
+    "NOTICE"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "smoke": "node scripts/smoke-host.mjs",
+    "check": "pnpm run build && pnpm run typecheck && pnpm run test && pnpm run smoke",
+    "prepublishOnly": "pnpm run check"
+  },
+  "dsh": {
+    "client": {
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-renderer",
+        "@deepseek-ai/dsh-client-ui-layout",
+        "@deepseek-ai/dsh-client-ui-settings",
+        "@deepseek-ai/dsh-client-ui-sidebar-right"
+      ],
+      "platform": "web"
+    },
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/asun-labs/dsh-plugin-computer-user.git"
+  },
+  "homepage": "https://github.com/asun-labs/dsh-plugin-computer-user#readme",
+  "bugs": {
+    "url": "https://github.com/asun-labs/dsh-plugin-computer-user/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": [
+    "deepseek-harness",
+    "dsh-plugin",
+    "computer-use",
+    "screenshot",
+    "virtual-desktop",
+    "automation"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": "^22.19.0 || >=24.0.0"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "^4.0.2",
+    "@deepseek-ai/dsh-client-connection": "^0.1.5-rc.2 || ^0.1.7-alpha.2",
+    "@deepseek-ai/dsh-client-ui-layout": "^0.1.5-rc.2 || ^0.1.7-alpha.2",
+    "@deepseek-ai/dsh-client-ui-renderer": "^0.1.5-rc.2 || ^0.1.7-alpha.2",
+    "@deepseek-ai/dsh-client-ui-settings": "^0.1.5-rc.2 || ^0.1.7-alpha.2",
+    "@deepseek-ai/dsh-client-ui-sidebar-right": "^0.1.5-rc.2 || ^0.1.7-alpha.2",
+    "@deepseek-ai/dsh-settings": "^0.1.5-rc.2 || ^0.1.7-alpha.2",
+    "@deepseek-ai/dsh-tools": "^0.1.5-rc.2 || ^0.1.7-alpha.2",
+    "@deepseek-ai/schemastery": "^3.18.4",
+    "react": "^18.3.1"
+  },
+  "devDependencies": {
+    "@deepseek-ai/cordis": "4.0.2",
+    "@deepseek-ai/dsh-client-connection": "0.1.5-rc.2",
+    "@deepseek-ai/dsh-client-ui-layout": "0.1.5-rc.2",
+    "@deepseek-ai/dsh-client-ui-renderer": "0.1.5-rc.2",
+    "@deepseek-ai/dsh-client-ui-settings": "0.1.5-rc.2",
+    "@deepseek-ai/dsh-client-ui-sidebar-right": "0.1.5-rc.2",
+    "@deepseek-ai/dsh-commands": "0.1.5-rc.2",
+    "@deepseek-ai/dsh-llm": "0.1.5-rc.2",
+    "@deepseek-ai/dsh-settings": "0.1.5-rc.2",
+    "@deepseek-ai/dsh-tools": "0.1.5-rc.2",
+    "@deepseek-ai/schemastery": "3.18.4",
+    "@types/node": "^22.20.0",
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "tsdown": "^0.22.2",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.8"
+  },
+  "packageManager": "pnpm@12.10.1"
+}

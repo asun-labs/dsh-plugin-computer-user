@@ -1,0 +1,11 @@
+# dsh-plugin-computer-user — bundle patch: inserts the plugin row.
+#
+# `link_mode: virtual` is the point of this fork: the agent's mouse and keyboard
+# act on the right-sidebar snapshot overlay, not on your real cursor. Flip the
+# setting to `real` only when you actually want the agent to drive this machine.
+- insert:
+    - id: dsh-computer-user
+      name: '@asun-labs/dsh-plugin-computer-user'
+      config:
+        mode: manual
+        link_mode: virtual
